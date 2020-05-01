@@ -16,9 +16,6 @@
 #include<stdlib.h>
 #include<errno.h>
 #include<fcntl.h>
-#include<unistd.h>
-#include<arpa/inet.h>
-#include<sys/socket.h>
 
 #include"HTTPServer.h"
 
@@ -41,8 +38,8 @@ HTTPServer::HTTPServer(int port)
 
 HTTPServer::~HTTPServer()
 {
-	close(newsockfd);
-	close(sockfd);
+	closesocket(newsockfd);
+	closesocket(sockfd);
 }
 
 int HTTPServer::setPort(size_t port)
@@ -103,16 +100,21 @@ int HTTPServer::run()
 			cerr<<funcName<<"Accept call failed"<<endl;
 			return -1;
 		}
-
-		if(fork() == 0){
+#ifndef PLATFORM_WINDOWS
+		if(fork() == 0)
+#endif
+		{
 			if(handleRequest()){
 				cerr<<funcName<<"Failed handling request"<<endl;
+#ifndef PLATFORM_WINDOWS
 				exit(-1);
+#endif
 			}
-
+#ifndef PLATFORM_WINDOWS
 			exit(0);
+#endif
 		}
-		close(newsockfd);
+		closesocket(newsockfd);
 	}
 
 	return 0;
@@ -147,7 +149,7 @@ int HTTPServer::handleRequest()
 		return -1;
 	}
 
-	m_httpResponse->printResponse();
+//	m_httpResponse->printResponse();
 
 	if(sendResponse()){
 		cerr<<funcName<<"Sending reply failed"<<endl;
@@ -226,7 +228,7 @@ int HTTPServer::processRequest()
 			m_url = SVR_ROOT + m_httpRequest->getURL();
 			m_mimeType = getMimeType(m_url);
 
-			ifs.open(m_url.c_str(), ifstream::in);
+			ifs.open(m_url.c_str(), ifstream::binary |ifstream::in);
 			if(ifs.is_open()){
 				ifs.seekg(0, ifstream::end);
 				contentLength = ifs.tellg();
@@ -274,7 +276,7 @@ int HTTPServer::processRequest()
 			m_url = SVR_ROOT + m_httpRequest->getURL();
 			m_mimeType = getMimeType(m_url);
 
-			ofs.open(m_url.c_str(), ofstream::out|ofstream::trunc);
+			ofs.open(m_url.c_str(), ofstream::binary|ofstream::out|ofstream::trunc);
 
 			if(ofs.is_open()){
 				if(m_httpRequest->copyToFile(ofs))
@@ -302,7 +304,7 @@ int HTTPServer::prepareResponse()
 	time_t curTime;
 	time(&curTime);
 	string curTimeStr = ctime(&curTime);
-	replace(curTimeStr.begin(), curTimeStr.end(), '\n', '\0');
+	replace(curTimeStr.begin(), curTimeStr.end(), '\n', ' ');
 
 	m_httpResponse->setProtocol(m_httpRequest->getProtocol());
 	m_httpResponse->setReasonPhrase();

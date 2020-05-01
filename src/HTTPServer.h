@@ -3,13 +3,11 @@
 #ifndef _HTTP_SERVER_H_
 #define _HTTP_SERVER_H_
 
-#include<arpa/inet.h>
-#include<sys/socket.h>
-
+#include "crossPlatform.h"
 #include"HTTPRequest.h"
 #include"HTTPResponse.h"
 
-#define SVR_ROOT "www"
+#define SVR_ROOT "d:\\repos\\www"
 
 using namespace std;
 
@@ -34,7 +32,7 @@ class HTTPServer{
 		string getMimeType(string );
 
 		size_t svrPort;
-		int sockfd, newsockfd;
+		SOCKET sockfd, newsockfd;
 		socklen_t cliLen;
 		struct sockaddr_in servAddr, cliAddr;
 
