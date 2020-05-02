@@ -27,6 +27,5 @@ typedef SOCKET int
 
 #endif
 
-
-
+//#define USE_IPV6
 #endif // !WIN_PLATFORM_H

@@ -25,6 +25,9 @@ class HTTPRequest{
 
 		int setURL(string );
 		string getURL(void );
+		string getURLFile(void);
+		int parseURL();
+		vector<pair<string, string> >* getParam(void);
 
 		int setProtocol(Protocol );
 		Protocol getProtocol(void );
@@ -58,6 +61,9 @@ class HTTPRequest{
 
 		vector<pair<string, string> > m_httpHeaders;
 		string m_requestBody;
+
+		string m_urlFile;
+		vector<pair<string, string> > m_Params;
 		
 		string m_data;
 };

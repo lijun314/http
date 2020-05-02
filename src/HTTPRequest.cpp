@@ -8,6 +8,7 @@
 #include<cstring>
 
 #include"HTTPRequest.h"
+using namespace std;
 
 HTTPRequest::HTTPRequest():m_requestBody(""), m_data("")
 {
@@ -53,6 +54,15 @@ int HTTPRequest::setURL(string url)
 string HTTPRequest::getURL()
 {
 	return m_url;
+}
+string HTTPRequest::getURLFile(void)
+{
+	return m_urlFile;
+
+}
+vector<pair<string, string> >* HTTPRequest::getParam(void)
+{
+	return &m_Params;
 }
 
 int HTTPRequest::setProtocol(Protocol protocol)
@@ -119,7 +129,55 @@ string* HTTPRequest::getRequestBodyPtr()
 {
 	return &m_requestBody;
 }
+int HTTPRequest::parseURL()
+{
+	size_t parseCursorOld = 0, parseCursorNew = 0;
+	size_t paramParseCursorOld, paramParseCursorNew;
+	string requestParam;
+	string requestParamName, requestParamContent;
 
+	/* Parse Request-Line */
+	/* HTTP Method */
+	parseCursorNew = m_url.find('?', parseCursorOld);
+	if (parseCursorNew != -1)
+	{
+		m_urlFile = m_url.substr(parseCursorOld, parseCursorNew - parseCursorOld);
+	}
+	else
+	{
+		m_urlFile = m_url;
+		return 0;
+	}
+	parseCursorOld = parseCursorNew + 1;
+	while (1) {
+		parseCursorNew = m_url.find('&', parseCursorOld);
+		if (parseCursorNew == -1)
+		{
+			parseCursorNew = m_url.length();
+		}
+		requestParam = m_url.substr(parseCursorOld, parseCursorNew - parseCursorOld);
+		parseCursorOld = parseCursorNew + 1;
+
+
+		paramParseCursorNew = requestParam.find('=');
+		if (paramParseCursorNew != -1 && paramParseCursorNew < requestParam.length() - 1)
+		{
+			requestParamName = requestParam.substr(0, paramParseCursorNew);
+			requestParamContent = requestParam.substr(paramParseCursorNew+1);
+			cout << requestParamName << "=" << requestParamContent << endl;
+
+		}
+
+
+		m_Params.push_back(make_pair(requestParamName, requestParamContent));
+
+
+		/* Is there another CRLF? */
+		if (m_url.length()<=parseCursorOld)
+			break;
+	}
+	return 0;
+}
 int HTTPRequest::parseRequest()
 {
 	/*
@@ -154,6 +212,7 @@ int HTTPRequest::parseRequest()
 	/* URL */
 	parseCursorNew = m_data.find_first_of(" ", parseCursorOld);
 	m_url = m_data.substr(parseCursorOld, parseCursorNew - parseCursorOld);
+	parseURL();
 	parseCursorOld = parseCursorNew+1;
 
 	/* HTTP Protocol */

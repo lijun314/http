@@ -34,8 +34,11 @@ class HTTPServer{
 		size_t svrPort;
 		SOCKET sockfd, newsockfd;
 		socklen_t cliLen;
+#ifdef USE_IPV6
+		struct sockaddr_in6  servAddr, cliAddr;
+#else
 		struct sockaddr_in servAddr, cliAddr;
-
+#endif
 		string m_url;
 		string m_mimeType;
 		HTTPRequest* m_httpRequest;
