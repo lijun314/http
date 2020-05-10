@@ -13,15 +13,7 @@
 
 
 using namespace std;
-int main(int argc, char* argv[])
-{
-	HTTPRequest req;
-	req.setURL("/127.0.0.1/test.php?p1=1&p2=&p3=456");
-	req.parseURL();
-	return 0;
 
-}
-/*
 int main(int argc, char* argv[])
 {
 	int port;
@@ -55,4 +47,3 @@ int main(int argc, char* argv[])
 #endif
 	return 0;
 }
-*/

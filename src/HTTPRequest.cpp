@@ -10,7 +10,7 @@
 #include"HTTPRequest.h"
 using namespace std;
 
-HTTPRequest::HTTPRequest():m_requestBody(""), m_data("")
+HTTPRequest::HTTPRequest():m_requestBody(""), m_data(""), m_bIsCGI(0)
 {
 }
 
@@ -60,7 +60,7 @@ string HTTPRequest::getURLFile(void)
 	return m_urlFile;
 
 }
-vector<pair<string, string> >* HTTPRequest::getParam(void)
+map<string, string>* HTTPRequest::getParam(void)
 {
 	return &m_Params;
 }
@@ -142,6 +142,7 @@ int HTTPRequest::parseURL()
 	if (parseCursorNew != -1)
 	{
 		m_urlFile = m_url.substr(parseCursorOld, parseCursorNew - parseCursorOld);
+		m_bIsCGI = 1;
 	}
 	else
 	{
@@ -164,12 +165,12 @@ int HTTPRequest::parseURL()
 		{
 			requestParamName = requestParam.substr(0, paramParseCursorNew);
 			requestParamContent = requestParam.substr(paramParseCursorNew+1);
-			cout << requestParamName << "=" << requestParamContent << endl;
+		//	cout << requestParamName << "=" << requestParamContent << endl;
 
 		}
 
 
-		m_Params.push_back(make_pair(requestParamName, requestParamContent));
+		m_Params[requestParamName]= requestParamContent;
 
 
 		/* Is there another CRLF? */

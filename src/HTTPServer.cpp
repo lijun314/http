@@ -19,12 +19,15 @@
 
 #include"HTTPServer.h"
 
+#include "CGIFunc.cpp"
+
 extern int errno;
 
 using namespace std;
 
 HTTPServer::HTTPServer(): svrPort(80)
 {
+	InitCGIMgr(this);
 }
 
 HTTPServer::HTTPServer(int port)
@@ -34,6 +37,7 @@ HTTPServer::HTTPServer(int port)
 	if(setPort(port)){
 		cerr<<funcName<<"Failed to set port"<<endl;
 	}
+	InitCGIMgr(this);
 }
 
 HTTPServer::~HTTPServer()
@@ -138,24 +142,29 @@ int HTTPServer::handleRequest()
 		cerr<<funcName<<"Parsing HTTP Request failed"<<endl;
 		return -1;
 	}
+	if (!m_httpRequest->isCGI())
+	{
+		if (processRequest()) {
+			cerr << funcName << "Processing HTTP Request failed" << endl;
+			return -1;
+		}
 
-	if(processRequest()){
-		cerr<<funcName<<"Processing HTTP Request failed"<<endl;
-		return -1;
+		if (prepareResponse()) {
+			cerr << funcName << "Preparing reply failed" << endl;
+			return -1;
+		}
+
+		//	m_httpResponse->printResponse();
+
+		if (sendResponse()) {
+			cerr << funcName << "Sending reply failed" << endl;
+			return -1;
+		}
 	}
-
-	if(prepareResponse()){
-		cerr<<funcName<<"Preparing reply failed"<<endl;
-		return -1;
+	else
+	{
+		processCGIRequest();
 	}
-
-//	m_httpResponse->printResponse();
-
-	if(sendResponse()){
-		cerr<<funcName<<"Sending reply failed"<<endl;
-		return -1;
-	}
-	
 	delete m_httpRequest;
 	delete m_httpResponse;
 	return 0;
@@ -207,7 +216,47 @@ int HTTPServer::parseRequest()
 
 	return 0;
 }
+int HTTPServer::processCGIRequest()
+{
+	string CGI = m_httpRequest->getURLFile();
+	ifstream ifs, errfs;
+	ofstream ofs;
+	size_t contentLength;
+	ostringstream os;
+	map<string, string>* param = m_httpRequest->getParam();
+	map<string, CGIFunc>::iterator it = m_CGIFuncMap.find(CGI);
+	if (it == m_CGIFuncMap.end())
+	{
+		//not find
+		string file404 = SVR_ROOT;
+		file404 += "/404.html";
+		errfs.open(file404.c_str(), ifstream::in);
+		if (errfs.is_open()) {
+			errfs.seekg(0, ifstream::end);
+			contentLength = errfs.tellg();
+			errfs.seekg(0, ifstream::beg);
+			os << contentLength;
 
+			if (m_httpResponse->copyFromFile(errfs, contentLength)) {
+				cerr << "processCGIRequest Failed to copy file to Response Body" << endl;
+				m_httpResponse->setStatusCode(500);
+				return 0;
+			}
+
+			m_httpResponse->setHTTPHeader("Content-Length", os.str());
+			m_httpResponse->setStatusCode(404);
+			return 0;
+		}
+		else {
+			cerr << "Critical error. Shutting down" << endl;
+			return -1;
+		}
+	}
+	else
+	{
+		m_CGIFuncMap[CGI](this,param);
+	}
+}
 int HTTPServer::processRequest()
 {
 	string funcName = "processRequest: ";
@@ -225,7 +274,7 @@ int HTTPServer::processRequest()
 
 	switch(method){
 		case GET:
-			m_url = SVR_ROOT + m_httpRequest->getURL();
+			m_url = SVR_ROOT + m_httpRequest->getURLFile();
 			m_mimeType = getMimeType(m_url);
 
 			ifs.open(m_url.c_str(), ifstream::binary |ifstream::in);
@@ -310,7 +359,7 @@ int HTTPServer::prepareResponse()
 	m_httpResponse->setReasonPhrase();
 
 	m_httpResponse->setHTTPHeader("Date", curTimeStr);
-	m_httpResponse->setHTTPHeader("Server", "Awesome HTTP Server");
+	m_httpResponse->setHTTPHeader("Server", "Data Recoder HTTP Server");
 	m_httpResponse->setHTTPHeader("Accept-Ranges", "bytes");
 	m_httpResponse->setHTTPHeader("Content-Type", m_mimeType);
 	m_httpResponse->setHTTPHeader("Connection", "close");
@@ -320,6 +369,14 @@ int HTTPServer::prepareResponse()
 		return -1;
 	}
 
+	return 0;
+}
+int HTTPServer::SendResponseData(char* pData, unsigned int len)
+{
+	if ((send(newsockfd, pData, len, 0)) < 0) {
+		cerr << " SendResponseData: Sending response failed" << endl;
+		return -1;
+	}
 	return 0;
 }
 
@@ -338,7 +395,7 @@ int HTTPServer::sendResponse()
 		cerr<<funcName<<"Sending response failed"<<endl;
 	}
 
-	delete buf;
+	delete[] buf;
 
 	return 0;
 }

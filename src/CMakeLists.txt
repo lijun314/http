@@ -26,7 +26,8 @@ set(HTTP_SERVER_SRC
 set(HTTP_PROXY_SRC
         HTTPProxy.cpp
         HTTPProxy.h
-        HTTPProxyMain.cpp)
+        HTTPProxyMain.cpp
+        CGIFunc.cpp)
 
 add_executable(DNSServer ${DNS_SRC})
 add_executable(HTTPClientMain ${HTTP_LIB_SRC} ${HTTP_CLIENT_SRC})

@@ -5,6 +5,7 @@
 
 #include<string>
 #include<vector>
+#include<map>
 #include<fstream>
 
 #include"HTTP.h"
@@ -27,7 +28,10 @@ class HTTPRequest{
 		string getURL(void );
 		string getURLFile(void);
 		int parseURL();
-		vector<pair<string, string> >* getParam(void);
+		map<string, string>* getParam(void);
+		int isCGI(void) {
+			return m_bIsCGI;
+		};
 
 		int setProtocol(Protocol );
 		Protocol getProtocol(void );
@@ -58,12 +62,13 @@ class HTTPRequest{
 		Protocol m_protocol;
 		string m_hostName;
 		string m_userAgent;
+		int m_bIsCGI;
 
 		vector<pair<string, string> > m_httpHeaders;
 		string m_requestBody;
 
 		string m_urlFile;
-		vector<pair<string, string> > m_Params;
+		map<string, string> m_Params;
 		
 		string m_data;
 };

@@ -7,9 +7,12 @@
 #include"HTTPRequest.h"
 #include"HTTPResponse.h"
 
-#define SVR_ROOT "d:\\repos\\www"
+#define SVR_ROOT "d:\\repos\\httpd\\www"
 
 using namespace std;
+
+class HTTPServer;
+typedef int (*CGIFunc)(HTTPServer* pHTTPserver, map<string, string>* param);
 
 class HTTPServer{
 	public:
@@ -26,8 +29,23 @@ class HTTPServer{
 		int parseRequest(void );
 		int prepareResponse(void );
 		int sendResponse(void );
+		int SendResponseData(char* pData, unsigned int len);
 		int processRequest(void );
-	
+		int processCGIRequest(void);
+		HTTPRequest* GetHTTPRequest(void) {
+			return m_httpRequest;
+		};
+		HTTPResponse* GetHTTPResponse(void) {
+			return m_httpResponse;
+		};
+		void AddCGIFunc(string strCGIName, CGIFunc func)
+		{
+			m_CGIFuncMap[strCGIName] = func;
+		}
+		void SetMineType(string mineType)
+		{
+			m_mimeType = mineType;
+		}
 	private:
 		string getMimeType(string );
 
@@ -41,6 +59,7 @@ class HTTPServer{
 #endif
 		string m_url;
 		string m_mimeType;
+		map<string, CGIFunc> m_CGIFuncMap;
 		HTTPRequest* m_httpRequest;
 		HTTPResponse* m_httpResponse;
 		static const int buf_sz = 32;

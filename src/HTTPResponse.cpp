@@ -267,6 +267,7 @@ int HTTPResponse::copyFromFile(ifstream& ifs, int contentLength)
 		ifs.read(fileBuf, contentLength);
 	}
 	m_responseBody.append(fileBuf, contentLength);
+	delete[] fileBuf;
 
 	if(ifs.bad())
 		return -1;
